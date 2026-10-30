@@ -21,7 +21,8 @@ spec:
             apt-get update -qq && apt-get install -y -qq git > /dev/null
             cd /data
             rm -rf sustmine-eps-new
-            git clone --depth 1 https://github.com/Somatalhi/SustMineEps.git sustmine-eps-new
+            git clone --depth 1 https://github.com/Somatalhi/SustMineEps.git sustmine-eps-clone
+            mv sustmine-eps-clone/SustMineEps_pilot sustmine-eps-new && rm -rf sustmine-eps-clone
             mkdir -p sustmine-eps/results
             cp -r sustmine-eps/results sustmine-eps-new/results
             rm -rf sustmine-eps-old
