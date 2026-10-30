@@ -28,6 +28,21 @@ for (lever, tag), lst in parts.items():
     sweeps.setdefault(lever, {})[tag] = df
 if not sweeps:
     raise SystemExit("no results/sweep_*_eps*.csv found")
+# the unconstrained baseline of a design is the same whatever the lever: share it across levers
+bases = {}
+for lever, d in sweeps.items():
+    for tag, df in d.items():
+        b = df[np.isinf(df.eps) & df.feasible]
+        if len(b): bases[tag] = b.iloc[0]
+for lever, d in sweeps.items():
+    for tag, df in d.items():
+        if not np.isinf(df.eps).any():
+            if tag not in bases:
+                raise SystemExit(f"no unconstrained baseline (eps=inf) found for design {tag}")
+            d[tag] = pd.concat([bases[tag].to_frame().T.assign(lever=lever), df], ignore_index=True)
+            d[tag]["eps"] = d[tag]["eps"].astype(float)
+            for c in ["npv", "waste", "land", "life", "feasible"]:
+                d[tag][c] = d[tag][c].astype(float if c != "feasible" else bool)
 fronts = {k: pd.read_csv(f"results/design_front_{k}.csv") for k in ["waste", "land", "life"]
           if os.path.exists(f"results/design_front_{k}.csv")}
 
