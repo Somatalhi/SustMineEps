@@ -1,0 +1,43 @@
+# Refresh the Aim 3 code on the shared volume: clones SustMineEps into /data/sustmine-eps,
+# keeping /data/sustmine-eps/results. Same PVC as Aim 2 (sustmine-data).
+#   kubectl delete job sustmine-eps-update ; kubectl apply -f update-job.yaml ; kubectl logs job/sustmine-eps-update -f
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sustmine-eps-update
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: update
+        image: python:3.12-slim
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            set -e
+            apt-get update -qq && apt-get install -y -qq git > /dev/null
+            cd /data
+            rm -rf sustmine-eps-new
+            git clone --depth 1 https://github.com/Somatalhi/SustMineEps.git sustmine-eps-clone
+            mv sustmine-eps-clone/SustMineEps_pilot sustmine-eps-new && rm -rf sustmine-eps-clone
+            mkdir -p sustmine-eps/results
+            cp -r sustmine-eps/results sustmine-eps-new/results
+            rm -rf sustmine-eps-old
+            [ -d sustmine-eps ] && mv sustmine-eps sustmine-eps-old
+            mv sustmine-eps-new sustmine-eps
+            rm -rf sustmine-eps-old
+            echo "--- code on volume now:"; ls sustmine-eps
+            ls -la sustmine-eps/bench_phases.pkl
+            grep -c "totals" sustmine-eps/sustmine_search/cpit.py
+            echo "UPDATE DONE"
+        resources:
+          requests: {cpu: "1", memory: "1Gi"}
+          limits:   {cpu: "1", memory: "1Gi"}
+        volumeMounts:
+        - {name: data, mountPath: /data}
+      volumes:
+      - name: data
+        persistentVolumeClaim: {claimName: sustmine-data}
