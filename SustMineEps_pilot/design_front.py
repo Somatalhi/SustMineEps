@@ -39,10 +39,12 @@ for name, (v, sense) in IND.items():
             front.append(i); best = npv[i]
     fr = pd.DataFrame(dict(npv=npv[front], indicator=v[front], capex=X[front, 0], rate=X[front, 1],
                            thr=X[front, 2], pb=np.round(X[front, 3]).astype(int), life=life[front], waste=waste[front]))
-    fr = fr.sort_values("indicator").reset_index(drop=True)
+    # one point per indicator value (designs with the same pit share waste and footprint): keep the best NPV
+    fr = (fr.sort_values(["indicator", "npv"], ascending=[True, False])
+            .drop_duplicates("indicator", keep="first").reset_index(drop=True))
     # piecewise slope: NPV given up per unit of indicator improvement, between adjacent front points
     dn = fr.npv.diff(); di = fr.indicator.diff()
-    fr["design_rate"] = (dn / di).abs() if sense == "min" else (dn / di).abs()
+    fr["design_rate"] = (dn / di).abs()
     fr.to_csv(f"{a.out}/design_front_{name}.csv", index=False)
     unit = {"waste": "$M per Mt", "land": "$M per ha.yr", "life": "$M per year"}[name]
     print(f"\n{name}: {len(fr)} front points; design rate ({unit}) median {fr.design_rate.median():.1f}, "
