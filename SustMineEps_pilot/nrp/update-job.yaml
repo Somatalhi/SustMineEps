@@ -33,6 +33,9 @@ spec:
             ls -la sustmine-eps/bench_phases.pkl
             grep -c "totals" sustmine-eps/sustmine_search/cpit.py
             echo "UPDATE DONE"
+        resources:        
+          requests: {cpu: "1", memory: "1Gi"}          
+          limits:   {cpu: "1", memory: "1Gi"}          
         volumeMounts:
         - {name: data, mountPath: /data}
       volumes:
