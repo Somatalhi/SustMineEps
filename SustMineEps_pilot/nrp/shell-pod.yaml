@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sustmine-shell
+spec:
+  restartPolicy: Never
+  containers:
+  - name: shell
+    image: python:3.12-slim
+    command: ["sleep", "7200"]
+    resources:
+      requests: {cpu: "1", memory: "2Gi"}
+      limits:   {cpu: "1", memory: "2Gi"}
+    volumeMounts:
+    - {name: data, mountPath: /data}
+  volumes:
+  - name: data
+    persistentVolumeClaim: {claimName: sustmine-data}
